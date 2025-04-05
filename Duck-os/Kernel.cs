@@ -1,18 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Text;
 using Cosmos.System.Graphics;
 using Cosmos.System.Graphics.Fonts;
 using Sys = Cosmos.System;
 using HAL = Cosmos.HAL;
-using Renderer;
-using Cosmos.Core_Plugs;
-using System.Numerics;
-using System.IO;
 using IL2CPU.API.Attribs;
-using System.ComponentModel;
-using Cosmos.HAL;
+using CosmosPNG.PNGLib.Decoders.PNG;
+using System.IO;
 
 namespace Duck_os
 {
@@ -20,35 +14,10 @@ namespace Duck_os
     {
         private Canvas canvas;
         private readonly Font font = PCScreenFont.Default;
-        public static Kernel Instance = new Kernel();
+        public static Global global = new Global();
 
         int test = 200;
         public int counter = 0;
-
-        public static uint width  = 1920;//800;
-        public static uint height = 1080;//600;
-
-        static Vertex vert1 = new Vertex(-3, -3, -3);
-        static Vertex vert2 = new Vertex( 3, -3, -3);
-        static Vertex vert3 = new Vertex(-3, -3,  3);
-        static Vertex vert4 = new Vertex( 3, -3,  3);
-        static Vertex vert5 = new Vertex( 0,  3,  0);
-
-        static Edge edge1 = new Edge(1, 2);
-        static Edge edge2 = new Edge(1, 3);
-        static Edge edge3 = new Edge(1, 5);
-        static Edge edge4 = new Edge(2, 4);
-        static Edge edge5 = new Edge(2, 5);
-        static Edge edge6 = new Edge(3, 4);
-        static Edge edge7 = new Edge(3, 5);
-        static Edge edge8 = new Edge(4, 5);
-
-        static Face face1 = new Face(1, 5, 2);
-        static Face face2 = new Face(1, 3, 5);
-        static Face face3 = new Face(5, 3, 4);
-        static Face face4 = new Face(2, 5, 4);
-        static Face face5 = new Face(3, 1, 4);
-        static Face face6 = new Face(1, 2, 4);
 
         static Vector3 position = new Vector3(0, 0, 5);
         static float scale = 1f;
@@ -58,64 +27,65 @@ namespace Duck_os
         int fps = 0;
         float dt = 0;
 
-        Mesh mesh = /*new Mesh(); */new Mesh(new List<Vertex> {vert1, vert2, vert3, vert4, vert5}, new List<Edge> {edge1, edge2, edge3, edge4, edge5, edge6, edge7, edge8}, new List<Face> {face1, face2, face3, face4, face5, face6}, position);
+        Mesh mesh;
 
-        [ManifestResourceStream(ResourceName = "Duck-os.data.duck.obj")]
-        public static byte[] file;
-        string fileContent = System.Text.Encoding.UTF8.GetString(file);
+        [ManifestResourceStream(ResourceName = "Duck-os.data.duck2.obj")]
+        public static byte[] objFile;
+        string objFileContent = System.Text.Encoding.UTF8.GetString(objFile);
+
+        [ManifestResourceStream(ResourceName = "Duck-os.data.duck.png")]
+        public static byte[] pngFile;
 
         protected override void BeforeRun()
         {
             Console.Clear();
             Console.WriteLine("Welcome to DuckOS!");
-            HAL.Global.PIT.Wait(2000); // 2s
 
-            try
-            {
-                mesh = ObjParser.ObjParser.Parse(fileContent);
-                mesh.position = position;
-                mesh.scale = scale;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
+            Bitmap Image = new PNGDecoder().GetBitmap(pngFile);
 
-            Console.WriteLine("Loaded model with " + mesh.edges.Count.ToString() + " edges");
+            mesh = ObjParser.Parse(objFileContent, Image);
+            mesh.position = position;
+            mesh.scale = scale;
 
-            HAL.Global.PIT.Wait(2000); // 2s
-
+            Console.WriteLine("Loaded model with " + mesh.vertices.Count.ToString() + " verts");
             Console.WriteLine("Switching to drawing the mesh :)");
 
-            HAL.Global.PIT.Wait(2000); // 2s
-            canvas = FullScreenCanvas.GetFullScreenCanvas(new Mode(width, height, ColorDepth.ColorDepth32)); //800, 600
-            canvas.Clear(Color.Red);
-
+            
+            // Initialize the canvas
+            canvas = FullScreenCanvas.GetFullScreenCanvas(new Mode(Global.width, Global.height, ColorDepth.ColorDepth32)); //800, 600
+            canvas.Clear(Color.Yellow);
             canvas.Display();
+        }
+
+        private void ClearDepthBuffer()
+        {
+            for (int i = 0; i < global.depthBuffer.Length - 1; i++)
+            {
+                global.depthBuffer[i] = float.MaxValue;
+            }
         }
 
         protected override void Run()
         {
-            if (deltaT != RTC.Second)
+            if (deltaT != HAL.RTC.Second)
             {
                 fps = frames;
                 frames = 0;
-                deltaT = RTC.Second;
+                deltaT = HAL.RTC.Second;
             }
             dt = 1f / (float)fps * 100;
 
             try
             {
                 canvas.Clear(Color.Blue);
-                Instance.counter = 0;
+                ClearDepthBuffer();
 
                 mesh.yRotation += 0.05;
                 mesh.RenderMesh(canvas);
 
                 canvas.DrawString("Omg guys look a spinning duck!", font, Color.Yellow, test, 100);
-                canvas.DrawString(Instance.counter.ToString(), font, Color.Yellow, 0, 0);
-                canvas.DrawString(fps.ToString(), font, Color.Yellow, 0, 50);
-                canvas.DrawString(dt.ToString(), font, Color.Yellow, 0, 75);
+                canvas.DrawString("FPS " + fps.ToString(), font, Color.Yellow, 0, 0);
+                canvas.DrawString("DT  " + dt. ToString(), font, Color.Yellow, 0, 16);
 
                 canvas.Display();
                 test++;
@@ -123,11 +93,10 @@ namespace Duck_os
             }
             catch (Exception ex)
             {
-                canvas.DrawString(ex.Message, font, Color.Yellow, (int) width/2, (int) height/2);
+                canvas.DrawString(ex.Message, font, Color.Yellow, (int) Global.width / 2, (int)Global.height / 2);
             }
 
             frames++;
-            HAL.Global.PIT.Wait((uint)(0));
         }
     }
 }
