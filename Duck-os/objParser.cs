@@ -4,11 +4,16 @@ using System.IO;
 using Cosmos.Core;
 using Cosmos.Core.Memory;
 using Cosmos.System.Graphics;
+using CosmosPNG.PNGLib.Decoders.PNG;
+using IL2CPU.API.Attribs;
 
 namespace Duck_os
 {
     public static class ObjParser
     {
+        [ManifestResourceStream(ResourceName = "Duck-os.data.uvs.png")]
+        private static byte[] uvFile;
+
         private static int ParseIntSafe(string str)
         {
             return int.TryParse(str, out int result) ? result : 1;
@@ -34,7 +39,9 @@ namespace Duck_os
             Face face5 = new Face(3, 1, 4);
             Face face6 = new Face(1, 2, 4);
 
-            return new Mesh(new List<Vertex> { vert1, vert2, vert3, vert4, vert5 }, new List<Face> { face1, face2, face3, face4, face5, face6 });
+            Mesh mesh = new Mesh(new List<Vertex> { vert1, vert2, vert3, vert4, vert5 }, new List<Face> { face1, face2, face3, face4, face5, face6 });
+            mesh.texture = new PNGDecoder().GetBitmap(uvFile);
+            return mesh;
         }
 
         private static Face ParseTriangleFace(string[] parts)
