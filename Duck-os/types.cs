@@ -19,28 +19,6 @@ namespace Duck_os
         public float depth { get; set; }
     }
 
-    public struct ScreenVertex
-    {
-        public ScreenVertex(float X, float Y, float U, float V)
-        {
-            x = X;
-            y = Y;
-            u = U;
-            v = V;
-        }
-
-        public ScreenVertex(float X, float Y)
-        {
-            x = X;
-            y = Y;
-        }
-
-        public float x { get; set; } = 0;
-        public float y { get; set; } = 0;
-        public float u { get; set; } = 0;
-        public float v { get; set; } = 0;
-    }
-
     public struct Vertex
     {
         public Vertex(float X, float Y, float Z)
@@ -53,6 +31,9 @@ namespace Duck_os
         public float x { get; set; } = 0f;
         public float y { get; set; } = 0f;
         public float z { get; set; } = 0f;
+
+        public ScreenPoint? cachedScreenPoint = null;
+        public int cachedFrame = 0;
 
         public static Vertex RotateX(Vertex point, double angle)
         {
@@ -89,18 +70,6 @@ namespace Duck_os
                 z = point.z
             };
         }
-    }
-
-
-    public struct Edge
-    {
-        public Edge(int vert1, int vert2)
-        {
-            vertex1index = vert1;
-            vertex2index = vert2;
-        }
-        public int vertex1index { get; set; }
-        public int vertex2index { get; set; }
     }
 
     public class Face
@@ -140,33 +109,30 @@ namespace Duck_os
         public Mesh()
         {
         }
-        public Mesh(List<Vertex> verts, List<Edge> Edges, List<Face> Faces, Vector3 Position, List<UV> uvs, List<Normal> Normals)
+
+        public Mesh(List<Vertex> verts, List<Face> Faces, Vector3 Position, List<UV> uvs, List<Normal> Normals)
         {
             vertices = verts;
-            edges = Edges;
             position = Position;
             faces = Faces;
             UVs = uvs;
             normals = Normals;
         }
 
-        public Mesh(List<Vertex> verts, List<Edge> Edges, List<Face> Faces, Vector3 Position)
+        public Mesh(List<Vertex> verts, List<Face> Faces, Vector3 Position)
         {
             vertices = verts;
-            edges = Edges;
             position = Position;
             faces = Faces;
         }
 
-        public Mesh(List<Vertex> verts, List<Edge> Edges, List<Face> Faces)
+        public Mesh(List<Vertex> verts, List<Face> Faces)
         {
             vertices = verts;
-            edges = Edges;
             faces = Faces;
         }
 
         public List<Vertex> vertices = new List<Vertex>();
-        public List<Edge> edges = new List<Edge>();
         public List<Face> faces = new List<Face>();
         public List<UV> UVs = new List<UV>();
         public List<Normal> normals = new List<Normal>();
@@ -174,11 +140,10 @@ namespace Duck_os
         public Bitmap texture = null;
 
         public Vector3 position = new Vector3(0, 0, 0);
-        public float scale = 1;
-
         public double xRotation = 0;
         public double yRotation = 0;
         public double zRotation = 0;
+        public float scale = 1;
 
         public Vertex transformVertex(Vertex vertex)
         {
@@ -202,30 +167,8 @@ namespace Duck_os
             {
                 Vertex Vertex = transformVertex(vertex);
 
-                ScreenPoint rendered = Renderer.ProjectVertex2(Vertex);
+                ScreenPoint rendered = Renderer.ProjectVertex(Vertex);
                 canvas.DrawPoint(Color.Black, (int)rendered.x, (int)rendered.y);
-            }
-        }
-
-        public void RenderWireframeMesh(Canvas canvas)
-        {
-            foreach (Edge edge in edges)
-            {
-                Vertex vertex1 = vertices[edge.vertex1index];
-                Vertex vertex2 = vertices[edge.vertex2index];
-
-                vertex1 = transformVertex(vertex1);
-                vertex2 = transformVertex(vertex2);
-
-                ScreenPoint rendered1 = Renderer.ProjectVertex2(vertex1);
-                ScreenPoint rendered2 = Renderer.ProjectVertex2(vertex2);
-
-                int X1 = (int)rendered1.x;
-                int Y1 = (int)rendered1.y;
-                int X2 = (int)rendered2.x;
-                int Y2 = (int)rendered2.y;
-
-                canvas.DrawLine(Color.Black, X1, Y1, X2, Y2);
             }
         }
 
@@ -241,15 +184,17 @@ namespace Duck_os
                 vertex2 = transformVertex(vertex2);
                 vertex3 = transformVertex(vertex3);
 
-                ScreenPoint rendered1 = Renderer.ProjectVertex2(vertex1);
-                ScreenPoint rendered2 = Renderer.ProjectVertex2(vertex2);
-                ScreenPoint rendered3 = Renderer.ProjectVertex2(vertex3);
+                ScreenPoint rendered1 = Renderer.ProjectVertex(vertex1);
+                ScreenPoint rendered2 = Renderer.ProjectVertex(vertex2);
+                ScreenPoint rendered3 = Renderer.ProjectVertex(vertex3);
 
                 UV uv1 = UVs[face.TextureIndices[0]];
                 UV uv2 = UVs[face.TextureIndices[1]];
                 UV uv3 = UVs[face.TextureIndices[2]];
 
-                Triangle.drawTriangle(rendered1, rendered2, rendered3, uv1, uv2, uv3, canvas, texture);
+                float brightness = 1f;// Math.Min(Math.Max(Dot(normals[face.NormalIndices[0]], new Vector3(0, 0, 1)), 1), 0);
+
+                Triangle.drawTriangle(rendered1, rendered2, rendered3, uv1, uv2, uv3, canvas, texture, brightness);
             }
         }
     }

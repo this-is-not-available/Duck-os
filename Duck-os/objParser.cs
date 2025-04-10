@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using Cosmos.Core;
 using Cosmos.System.Graphics;
 
 namespace Duck_os
@@ -8,22 +10,12 @@ namespace Duck_os
     {
         private static int ParseIntSafe(string str)
         {
-            int result;
-            if (int.TryParse(str, out result))
-            {
-                return result;
-            }
-            return 1;
+            return int.TryParse(str, out int result) ? result : 1;
         }
 
         private static float ParseFloatSafe(string str)
         {
-            float result;
-            if (float.TryParse(str, out result))
-            {
-                return result;
-            }
-            return 1f;
+            return float.TryParse(str, out float result) ? result : 1f;
         }
 
         public static Mesh GetDefaultMesh()
@@ -34,15 +26,6 @@ namespace Duck_os
             Vertex vert4 = new Vertex(3, -3, 3);
             Vertex vert5 = new Vertex(0, 3, 0);
 
-            Edge edge1 = new Edge(1, 2);
-            Edge edge2 = new Edge(1, 3);
-            Edge edge3 = new Edge(1, 5);
-            Edge edge4 = new Edge(2, 4);
-            Edge edge5 = new Edge(2, 5);
-            Edge edge6 = new Edge(3, 4);
-            Edge edge7 = new Edge(3, 5);
-            Edge edge8 = new Edge(4, 5);
-
             Face face1 = new Face(1, 5, 2);
             Face face2 = new Face(1, 3, 5);
             Face face3 = new Face(5, 3, 4);
@@ -50,7 +33,7 @@ namespace Duck_os
             Face face5 = new Face(3, 1, 4);
             Face face6 = new Face(1, 2, 4);
 
-            return new Mesh(new List<Vertex> { vert1, vert2, vert3, vert4, vert5 }, new List<Edge> { edge1, edge2, edge3, edge4, edge5, edge6, edge7, edge8 }, new List<Face> { face1, face2, face3, face4, face5, face6 });
+            return new Mesh(new List<Vertex> { vert1, vert2, vert3, vert4, vert5 }, new List<Face> { face1, face2, face3, face4, face5, face6 });
         }
 
         private static Face ParseTriangleFace(string[] parts)
@@ -108,6 +91,7 @@ namespace Duck_os
 
             return faces;
         }
+
         public static Mesh Parse(string fileContent, Bitmap texture)
         {
             Mesh model = Parse(fileContent);
@@ -118,80 +102,53 @@ namespace Duck_os
         public static Mesh Parse(string fileContent)
         {
             Mesh model = new Mesh();
-            List<Vertex> vertices = new List<Vertex>();
-            List<Edge> edges = new List<Edge>();
-            List<Face> faces = new List<Face>();
-            List<Normal> normals = new List<Normal>();
-            List<UV> UVs = new List<UV>();
-
             string[] lines = fileContent.Split('\n');
 
-            //try
-            //{
-                foreach (string line1 in lines)
-                {
-                    string line = line1.TrimEnd(new char[] { '\r', '\n' });
-                    string[] parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length == 0) continue;
-
-                    switch (parts[0])
-                    {
-                        case "v":
-                            // Vertex
-
-                            Vertex vertex = new Vertex(ParseFloatSafe(parts[1]), ParseFloatSafe(parts[2]), ParseFloatSafe(parts[3]));
-                            vertices.Add(vertex);
-                            break;
-
-                        case "vt":
-                            // Texture Coordinate
-                            UV texture = new UV
-                            (
-                                float.Parse(parts[1]),
-                                float.Parse(parts[2])
-                            );
-                            UVs.Add(texture);
-                            break;
-
-                        case "vn":
-                            // Normal
-                            Normal normal = new Normal
-                            {
-                                X = float.Parse(parts[1]),
-                                Y = float.Parse(parts[2]),
-                                Z = float.Parse(parts[3])
-                            };
-                            normals.Add(normal);
-                            break;
-
-                        case "f":
-                            // Face
-                            List<Face> parsedFaces = ParseFace(parts);
-                            foreach (Face face in parsedFaces)
-                            {
-                                faces.Add(face);
-                            }
-                            break;
-
-                        default:
-                            // Ignore unexpected lines
-                            break;
-                    }
-                }
-            /*}
-            catch (Exception e)
+            foreach (string line1 in lines)
             {
-                Console.WriteLine(e.Message);
+                string line = line1.TrimEnd(new char[] { '\r', '\n' });
+                if (string.IsNullOrWhiteSpace(line)) continue;
 
-                return GetDefaultMesh();
-            }*/
+                string[] parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0) continue;
 
-            model.vertices = vertices;
-            model.faces = faces;
-            model.edges = edges;
-            model.UVs = UVs;
-            model.normals = normals;
+                switch (parts[0])
+                {
+                    case "v":
+                        // Vertex
+                        model.vertices.Add(new Vertex(ParseFloatSafe(parts[1]), ParseFloatSafe(parts[2]), ParseFloatSafe(parts[3])));
+                        break;
 
+                    case "vt":
+                        // Texture Coordinate
+                        model.UVs.Add(new UV(float.Parse(parts[1]), 1 - float.Parse(parts[2])));
+                        break;
+
+                    case "vn":
+                        // Normal
+                        model.normals.Add(new Normal
+                        {
+                            X = float.Parse(parts[1]),
+                            Y = float.Parse(parts[2]),
+                            Z = float.Parse(parts[3])
+                        });
+                        break;
+
+                    case "f":
+                        // Face
+                        model.faces.AddRange(ParseFace(parts));
+                        break;
+
+                    default:
+                        // Ignore unexpected lines
+                        break;
+                }
+
+                line = null;
+                parts = null;
+            }
+
+            lines = null;
             return model;
         }
     }

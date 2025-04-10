@@ -6,7 +6,8 @@ using Sys = Cosmos.System;
 using HAL = Cosmos.HAL;
 using IL2CPU.API.Attribs;
 using CosmosPNG.PNGLib.Decoders.PNG;
-using System.IO;
+using Cosmos.Core;
+using Cosmos.Core.Memory;
 
 namespace Duck_os
 {
@@ -16,87 +17,86 @@ namespace Duck_os
         private readonly Font font = PCScreenFont.Default;
         public static Global global = new Global();
 
-        int test = 200;
-        public int counter = 0;
-
-        static Vector3 position = new Vector3(0, 0, 5);
-        static float scale = 1f;
-
-        int deltaT = 0;
-        int frames = 0;
-        int fps = 0;
-        float dt = 0;
+        ulong secondCycles;
+        int GCCount = 0;
+        const bool limitFPS = true;
 
         Mesh mesh;
+
+        [ManifestResourceStream(ResourceName = "Duck-os.data.duck.png")]
+        public static byte[] pngFile;
 
         [ManifestResourceStream(ResourceName = "Duck-os.data.duck2.obj")]
         public static byte[] objFile;
         string objFileContent = System.Text.Encoding.UTF8.GetString(objFile);
 
-        [ManifestResourceStream(ResourceName = "Duck-os.data.duck.png")]
-        public static byte[] pngFile;
-
         protected override void BeforeRun()
         {
             Console.Clear();
-            Console.WriteLine("Welcome to DuckOS!");
+            Console.WriteLine("Welcome to " + Global.OSName + "!");
+            Console.WriteLine("Version " + Global.OSVersion);
 
             Bitmap Image = new PNGDecoder().GetBitmap(pngFile);
 
             mesh = ObjParser.Parse(objFileContent, Image);
-            mesh.position = position;
-            mesh.scale = scale;
+            mesh.position = new Vector3(0, 0, 5);
+            mesh.scale = 1f;
 
-            Console.WriteLine("Loaded model with " + mesh.vertices.Count.ToString() + " verts");
-            Console.WriteLine("Switching to drawing the mesh :)");
+            ulong startCycle = CPU.GetCPUUptime();
+            HAL.Global.PIT.Wait(100);
+            secondCycles = (CPU.GetCPUUptime() - startCycle) * 10;
+            Heap.Collect();
 
-            
             // Initialize the canvas
             canvas = FullScreenCanvas.GetFullScreenCanvas(new Mode(Global.width, Global.height, ColorDepth.ColorDepth32)); //800, 600
             canvas.Clear(Color.Yellow);
             canvas.Display();
         }
 
-        private void ClearDepthBuffer()
-        {
-            for (int i = 0; i < global.depthBuffer.Length - 1; i++)
-            {
-                global.depthBuffer[i] = float.MaxValue;
-            }
-        }
-
         protected override void Run()
         {
-            if (deltaT != HAL.RTC.Second)
+            float startTime = CPU.GetCPUUptime();
+            canvas.Clear(Color.Blue);
+            global.ClearDepthBuffer();
+
+            mesh.yRotation -= 2 * global.dt;
+            mesh.RenderMesh(canvas);
+            canvas.DrawString("FPS " + global.fps.ToString(), font, Color.Yellow, 0, 0);
+            canvas.Display();
+
+            Sys.KeyEvent keyEvent;
+            Sys.KeyboardManager.TryReadKey(out keyEvent);
+
+            // Only works on PS/2 keyboards
+            if (keyEvent.Key == Sys.ConsoleKeyEx.Escape)
             {
-                fps = frames;
-                frames = 0;
-                deltaT = HAL.RTC.Second;
-            }
-            dt = 1f / (float)fps * 100;
-
-            try
-            {
-                canvas.Clear(Color.Blue);
-                ClearDepthBuffer();
-
-                mesh.yRotation += 0.05;
-                mesh.RenderMesh(canvas);
-
-                canvas.DrawString("Omg guys look a spinning duck!", font, Color.Yellow, test, 100);
-                canvas.DrawString("FPS " + fps.ToString(), font, Color.Yellow, 0, 0);
-                canvas.DrawString("DT  " + dt. ToString(), font, Color.Yellow, 0, 16);
-
-                canvas.Display();
-                test++;
-
-            }
-            catch (Exception ex)
-            {
-                canvas.DrawString(ex.Message, font, Color.Yellow, (int) Global.width / 2, (int)Global.height / 2);
+                Sys.Power.Shutdown();
             }
 
-            frames++;
+            // Garbage collect every 4 frames
+            if (GCCount < 5) { GCCount++; }
+            else
+            {
+                Heap.Collect();
+                GCCount = 0;
+            }
+
+            // Limit the framerate to 30 FPS
+            global.dt = (CPU.GetCPUUptime() - startTime) / secondCycles;
+            global.fps = 1f / global.dt;
+            if (limitFPS)
+            {
+                ulong endCycle = (ulong)(CPU.GetCPUUptime() + ((0.03333333333 - global.dt) * secondCycles));
+                while (true)
+                {
+                    if (CPU.GetCPUUptime() >= endCycle || CPU.GetCPUUptime() <= startTime)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            global.frame++;
         }
     }
 }

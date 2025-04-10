@@ -17,9 +17,11 @@
         <Profile>VMware</Profile>
         <Description>Use VMware Player or Workstation to deploy and debug.</Description>
         <PxeInterface>192.168.0.8</PxeInterface>
-        <DebugEnabled>True</DebugEnabled>
+        <DebugEnabled>False</DebugEnabled>
         <VMWareEdition>Player</VMWareEdition>
-        <OptimizationLevel>3</OptimizationLevel>
+        <OptimizationLevel>2</OptimizationLevel>
+        <CompileVBEMultiboot>False</CompileVBEMultiboot>
+        <VBEResolution>1024x768x32</VBEResolution>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
@@ -27,28 +29,18 @@
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'" />
 
     <ItemGroup>
-      <None Remove="data\cube.obj" />
-      <None Remove="data\cube2.obj" />
-      <None Remove="data\duck.mtl" />
       <None Remove="data\duck.obj" />
       <None Remove="data\duck.png" />
       <None Remove="data\duck2.obj" />
       <None Remove="data\duck_full.obj" />
-      <None Remove="data\sphere.mtl" />
-      <None Remove="data\sphere.obj" />
       <None Remove="data\uvs.png" />
     </ItemGroup>
 
     <ItemGroup>
-      <EmbeddedResource Include="data\cube.obj" />
-      <EmbeddedResource Include="data\cube2.obj" />
-      <EmbeddedResource Include="data\duck.mtl" />
       <EmbeddedResource Include="data\duck.obj" />
       <EmbeddedResource Include="data\duck.png" />
       <EmbeddedResource Include="data\duck2.obj" />
       <EmbeddedResource Include="data\duck_full.obj" />
-      <EmbeddedResource Include="data\sphere.mtl" />
-      <EmbeddedResource Include="data\sphere.obj" />
       <EmbeddedResource Include="data\uvs.png" />
     </ItemGroup>
 
