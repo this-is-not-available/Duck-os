@@ -19,14 +19,13 @@ namespace Duck_os
 
         ulong secondCycles;
         int GCCount = 0;
-        const bool limitFPS = true;
 
         Mesh mesh;
 
         [ManifestResourceStream(ResourceName = "Duck-os.data.duck.png")]
         public static byte[] pngFile;
 
-        [ManifestResourceStream(ResourceName = "Duck-os.data.duck2.obj")]
+        [ManifestResourceStream(ResourceName = "Duck-os.data.duck_full.obj")]
         public static byte[] objFile;
         string objFileContent = System.Text.Encoding.UTF8.GetString(objFile);
 
@@ -84,7 +83,7 @@ namespace Duck_os
             // Limit the framerate to 30 FPS
             global.dt = (CPU.GetCPUUptime() - startTime) / secondCycles;
             global.fps = 1f / global.dt;
-            if (limitFPS)
+            if (Global.LimitFPS)
             {
                 ulong endCycle = (ulong)(CPU.GetCPUUptime() + ((0.03333333333 - global.dt) * secondCycles));
                 while (true)

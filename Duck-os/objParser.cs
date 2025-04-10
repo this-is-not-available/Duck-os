@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Cosmos.Core;
+using Cosmos.Core.Memory;
 using Cosmos.System.Graphics;
 
 namespace Duck_os
@@ -103,6 +104,7 @@ namespace Duck_os
         {
             Mesh model = new Mesh();
             string[] lines = fileContent.Split('\n');
+            int i = 0;
 
             foreach (string line1 in lines)
             {
@@ -127,11 +129,11 @@ namespace Duck_os
                     case "vn":
                         // Normal
                         model.normals.Add(new Normal
-                        {
-                            X = float.Parse(parts[1]),
-                            Y = float.Parse(parts[2]),
-                            Z = float.Parse(parts[3])
-                        });
+                        (
+                            float.Parse(parts[1]),
+                            float.Parse(parts[2]),
+                            float.Parse(parts[3])
+                        ));
                         break;
 
                     case "f":
@@ -143,6 +145,9 @@ namespace Duck_os
                         // Ignore unexpected lines
                         break;
                 }
+                i++;
+                Console.WriteLine("Parsing line " + i + "/" + lines.Length);
+                Heap.Collect();
 
                 line = null;
                 parts = null;

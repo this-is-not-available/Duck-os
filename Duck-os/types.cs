@@ -102,6 +102,18 @@ namespace Duck_os
     public class Normal
     {
         public float X, Y, Z;
+
+        public Normal(float x, float y, float z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+
+        public float Dot(Vector3 b)
+        {
+            return X * b.X + Y * b.Y + Z * b.Z;
+        }
     }
 
     public struct Mesh
@@ -192,7 +204,7 @@ namespace Duck_os
                 UV uv2 = UVs[face.TextureIndices[1]];
                 UV uv3 = UVs[face.TextureIndices[2]];
 
-                float brightness = 1f;// Math.Min(Math.Max(Dot(normals[face.NormalIndices[0]], new Vector3(0, 0, 1)), 1), 0);
+                float brightness = /*1f;*/ Math.Min(Math.Max(normals[face.NormalIndices[0]].Dot(new Vector3(0, 1, 0)), 1), 0);
 
                 Triangle.drawTriangle(rendered1, rendered2, rendered3, uv1, uv2, uv3, canvas, texture, brightness);
             }

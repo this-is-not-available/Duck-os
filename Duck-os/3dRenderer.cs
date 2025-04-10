@@ -8,7 +8,7 @@
         public static ScreenPoint ProjectVertex(Vertex vertex)
         {
             // Cache results
-            if (vertex.cachedScreenPoint != null && vertex.cachedFrame == Kernel.global.frame)
+            if (vertex.cachedFrame == Kernel.global.frame)
             {
                 return (ScreenPoint)vertex.cachedScreenPoint;
             }

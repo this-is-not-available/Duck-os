@@ -132,7 +132,7 @@ namespace Duck_os
             return new Vector3(v.X / length, v.Y / length, v.Z / length);
         }
 
-        private static float Dot(Vector3 a, Vector3 b)
+        public static float Dot(Vector3 a, Vector3 b)
         {
             return a.X * b.X + a.Y * b.Y + a.Z * b.Z;
         }
