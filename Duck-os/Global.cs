@@ -3,9 +3,9 @@
     public class Global
     {
         public static string OSName = "DuckOS";
-        public static string OSVersion = "1.0.0";
+        public static string OSVersion = "1.0.1";
 
-        public static bool LimitFPS = false;
+        public static bool LimitFPS = true;
 
         public static uint width = 1024;
         public static uint height = 768;

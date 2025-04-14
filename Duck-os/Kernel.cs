@@ -25,7 +25,7 @@ namespace Duck_os
         [ManifestResourceStream(ResourceName = "Duck-os.data.duck.png")]
         public static byte[] pngFile;
 
-        [ManifestResourceStream(ResourceName = "Duck-os.data.duck_full.obj")]
+        [ManifestResourceStream(ResourceName = "Duck-os.data.duck2.obj")]
         public static byte[] objFile;
         string objFileContent = System.Text.Encoding.UTF8.GetString(objFile);
 

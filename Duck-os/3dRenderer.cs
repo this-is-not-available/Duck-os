@@ -3,7 +3,7 @@
     public class Renderer
     {
         private static float fovAdjustment = 1.0f / 1.61977519054f;//MathF.Tan(90 / 2);
-        private static readonly float ScaleFactor = Global.height / 500;
+        private static readonly float ScaleFactor = Global.height / 300;
 
         public static ScreenPoint ProjectVertex(Vertex vertex)
         {
